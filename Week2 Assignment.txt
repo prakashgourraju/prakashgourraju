@@ -1,0 +1,17 @@
+import json
+import boto3
+import os
+import csv
+client = boto3.client('s3')
+def lambda_handler(event, context):
+    bucket = os.environ["Bucket"]
+    key = os.environ["Key"]
+    print(bucket)
+    print(key)
+    response = client.get_object(Bucket=bucket, Key=key)
+    lines=response["Body"].read().decode("utf-8").splitlines(True)
+    reader=csv.DictReader(lines)
+    studentnum = event["StudentName"]
+    for row in reader:
+        if row['Name'] == studentnum:
+            print(row['Name'],row['Physics'],row['Chemistry'],row['English'])
