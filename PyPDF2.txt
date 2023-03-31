@@ -6,7 +6,55 @@ with open('example.pdf', 'rb') as file:
     # Create a PDF reader object
     pdf_reader = PyPDF2.PdfFileReader(file)
 
-    # Get the number of pages in the PDF file
+    # Get the number of pages iimport PyPDF2
+
+# Open the PDF file
+pdf_file = open('input.pdf', 'rb')
+
+# Create a PDF reader object
+pdf_reader = PyPDF2.PdfFileReader(pdf_file)
+
+# Create a PDF writer object
+pdf_writer = PyPDF2.PdfFileWriter()
+
+# Get the number of pages in the PDF file
+num_pages = pdf_reader.getNumPages()
+
+# Create a dictionary to store the bookmark destinations
+bookmark_dests = {}
+
+# Loop through the pages of the PDF file
+for page_num in range(num_pages):
+
+    # Get the page object
+    page_obj = pdf_reader.getPage(page_num)
+
+    # Get the page's contents dictionary
+    contents_dict = page_obj.getContents().getObject()
+
+    # If the contents dictionary contains a metadata object, remove it
+    if '/Metadata' in contents_dict:
+        del contents_dict['/Metadata']
+
+    # Add the page to the PDF writer object
+    pdf_writer.addPage(page_obj)
+
+    # If the page has a bookmark destination, add it to the bookmark destinations dictionary
+    if '/Title' in contents_dict:
+        bookmark_dests[contents_dict['/Title']] = pdf_writer.addBookmark(contents_dict['/Title'], page_num)
+
+# Add the bookmarks to the PDF writer object
+for title, dest in bookmark_dests.items():
+    pdf_writer.addBookmark(title, dest)
+
+# Save the new PDF file
+output_file = open('output.pdf', 'wb')
+pdf_writer.write(output_file)
+output_file.close()
+
+# Close the input PDF file
+pdf_file.close()
+n the PDF file
     num_pages = pdf_reader.numPages
 
     # Create a PDF writer object
