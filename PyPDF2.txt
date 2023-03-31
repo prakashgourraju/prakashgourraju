@@ -1,27 +1,44 @@
 import PyPDF2
 
-# Open the existing PDF file
-with open('existing_file.pdf', 'rb') as pdf_file:
-    # Create a PDF reader object
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-    # Get the number of pages in the PDF file
-    num_pages = pdf_reader.getNumPages()
+# Open an existing PDF document
+pdf_file = open('example.pdf', 'rb')
+pdf_reader = PyPDF2.PdfFileReader(pdf_file)
 
-    # Create a PDF writer object
-    pdf_writer = PyPDF2.PdfFileWriter()
+# Create a PDF writer object
+pdf_writer = PyPDF2.PdfFileWriter()
 
-    # Iterate through each page in the PDF file
-    for page_num in range(num_pages):
-        # Add the page to the PDF writer object
-        pdf_writer.addPage(pdf_reader.getPage(page_num))
+# Add each page of the input PDF to the writer object
+for page_num in range(pdf_reader.numPages):
+    pdf_writer.addPage(pdf_reader.getPage(page_num))
 
-    # Create the bookmarks based on the TOC
-    bookmarks = pdf_reader.getOutlines()
-    if bookmarks:
-        for title, page_num in bookmarks:
-            # Add the bookmark to the PDF writer object
-            pdf_writer.addBookmark(title, page_num)
+# Retrieve the existing table of contents
+toc = pdf_reader.outlines
 
-    # Save the PDF writer object to a new PDF file
-    with open('new_file.pdf', 'wb') as new_pdf_file:
-        pdf_writer.write(new_pdf_file)
+# Create a new outlines object to store the bookmarks
+outlines = PyPDF2.pdf.Outlines()
+
+# Iterate over the existing table of contents and create a corresponding bookmark
+for toc_item in toc:
+    if isinstance(toc_item, list):
+        # If the TOC item is a sublist, iterate over its items
+        sublist = PyPDF2.pdf.Outlines()
+        for sublist_item in toc_item:
+            page_num = pdf_reader.getDestinationPageNumber(sublist_item['/Dest'])[0]
+            bookmark = PyPDF2.pdf.OutlineNode(sublist_item['/Title'], page_num)
+            sublist.addBookmark(bookmark)
+        outlines.addBookmark(PyPDF2.pdf.OutlineNode(toc_item[0]['/Title'], None, None, sublist))
+    else:
+        page_num = pdf_reader.getDestinationPageNumber(toc_item['/Dest'])[0]
+        bookmark = PyPDF2.pdf.OutlineNode(toc_item['/Title'], page_num)
+        outlines.addBookmark(bookmark)
+
+# Add the bookmarks to the PDF writer object
+pdf_writer.addBookmark(outlines)
+
+# Write the output PDF to a file
+output_pdf = open('output.pdf', 'wb')
+pdf_writer.write(output_pdf)
+
+# Close the input and output PDF files
+pdf_file.close()
+output_pdf.close()
