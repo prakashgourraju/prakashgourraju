@@ -1,65 +1,48 @@
 import PyPDF2
 
-# Open the PDF file
-with open('sample.pdf', 'rb') as pdf_file:
-    # Read the PDF file
-    pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-    
+# Open the PDF file in read-binary mode
+with open('example.pdf', 'rb') as file:
+
+    # Create a PDF reader object
+    pdf_reader = PyPDF2.PdfFileReader(file)
+
     # Get the number of pages in the PDF file
-    num_pages = pdf_reader.getNumPages()
-    
-    # Create a PDF writer object to output the modified PDF
+    num_pages = pdf_reader.numPages
+
+    # Create a PDF writer object
     pdf_writer = PyPDF2.PdfFileWriter()
-    
-    # Create a dictionary to store the TOC entries and their page numbers
-    toc_entries = {}
-    
+
     # Loop through each page in the PDF file
     for page_num in range(num_pages):
+
         # Get the current page object
         page = pdf_reader.getPage(page_num)
-        
-        # Get the page's dictionary object
-        page_dict = page.getObject()
-        
-        # Check if the page has a TOC entry
-        if '/Title' in page_dict.keys():
-            # Get the TOC entry
-            toc_entry = page_dict['/Title']
-            
-            # Get the page number of the TOC entry
-            page_num = pdf_reader.getDestinationPageNumber(page_dict)
-            
-            # Add the TOC entry and its page number to the dictionary
-            toc_entries[toc_entry] = page_num
-        
+
         # Add the page to the PDF writer object
         pdf_writer.addPage(page)
-    
-    # Create the bookmarks based on the TOC entries
-    parent_bookmark = None
-    grandparent_bookmark = None
-    
-    for toc_entry, page_num in toc_entries.items():
-        # Create the bookmark object
-        bookmark = pdf_writer.addBookmark(toc_entry, page_num)
-        
-        # Determine the bookmark's level
-        if toc_entry.startswith(' '):
-            # Level 3 bookmark
-            if grandparent_bookmark:
-                parent_bookmark = grandparent_bookmark.children[-1]
-            if parent_bookmark:
-                parent_bookmark.children.append(bookmark)
-        elif toc_entry.isupper():
-            # Level 1 bookmark
-            grandparent_bookmark = bookmark
-        else:
-            # Level 2 bookmark
-            if grandparent_bookmark:
-                parent_bookmark = grandparent_bookmark.children[-1]
-            grandparent_bookmark.children.append(bookmark)
-    
-    # Save the modified PDF file
-    with open('sample_with_bookmarks.pdf', 'wb') as output_pdf:
-        pdf_writer.write(output_pdf)
+
+        # Check if the page has a /Title entry in the /Metadata dictionary
+        if '/Title' in page['/Metadata']:
+            
+            # Get the title of the page
+            title = page['/Metadata']['/Title']
+
+            # Split the title into levels based on the delimiter '|'
+            levels = title.split('|')
+
+            # Create a bookmark object for the current page
+            bookmark = pdf_writer.addBookmark(levels[-1], page)
+
+            # Loop through each level in the title and create nested bookmarks
+            parent_bookmark = bookmark
+            for level in reversed(levels[:-1]):
+
+                # Create a child bookmark object for the current level
+                child_bookmark = pdf_writer.addBookmark(level, page, parent_bookmark)
+
+                # Set the parent bookmark object for the next iteration
+                parent_bookmark = child_bookmark
+
+    # Write the PDF writer object to a new PDF file
+    with open('example_with_bookmarks.pdf', 'wb') as output:
+        pdf_writer.write(output)
