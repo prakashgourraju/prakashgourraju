@@ -1,13 +1,5 @@
 import PyPDF2
 
-# Open the PDF file in read-binary mode
-with open('example.pdf', 'rb') as file:
-
-    # Create a PDF reader object
-    pdf_reader = PyPDF2.PdfFileReader(file)
-
-    # Get the number of pages iimport PyPDF2
-
 # Open the PDF file
 pdf_file = open('input.pdf', 'rb')
 
@@ -54,43 +46,3 @@ output_file.close()
 
 # Close the input PDF file
 pdf_file.close()
-n the PDF file
-    num_pages = pdf_reader.numPages
-
-    # Create a PDF writer object
-    pdf_writer = PyPDF2.PdfFileWriter()
-
-    # Loop through each page in the PDF file
-    for page_num in range(num_pages):
-
-        # Get the current page object
-        page = pdf_reader.getPage(page_num)
-
-        # Add the page to the PDF writer object
-        pdf_writer.addPage(page)
-
-        # Check if the page has a /Title entry in the /Metadata dictionary
-        if '/Title' in page['/Metadata']:
-            
-            # Get the title of the page
-            title = page['/Metadata']['/Title']
-
-            # Split the title into levels based on the delimiter '|'
-            levels = title.split('|')
-
-            # Create a bookmark object for the current page
-            bookmark = pdf_writer.addBookmark(levels[-1], page)
-
-            # Loop through each level in the title and create nested bookmarks
-            parent_bookmark = bookmark
-            for level in reversed(levels[:-1]):
-
-                # Create a child bookmark object for the current level
-                child_bookmark = pdf_writer.addBookmark(level, page, parent_bookmark)
-
-                # Set the parent bookmark object for the next iteration
-                parent_bookmark = child_bookmark
-
-    # Write the PDF writer object to a new PDF file
-    with open('example_with_bookmarks.pdf', 'wb') as output:
-        pdf_writer.write(output)
