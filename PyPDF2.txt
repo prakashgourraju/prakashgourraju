@@ -1,23 +1,22 @@
-from office365.runtime.auth.user_credential import UserCredential
+from office365.runtime.auth.authentication_context import AuthenticationContext
 from office365.sharepoint.client_context import ClientContext
- 
-# Set the SharePoint site URL
-site_url = "https://yoursharepointsite.sharepoint.com/sites/your-site-name"
- 
-# Set the username and password of the user
-username = "user@yourdomain.com"
-password = "yourpassword"
- 
-# Create a UserCredential object with the username and password
-credentials = UserCredential(username, password)
- 
-# Create a ClientContext object with the site URL and the UserCredential object
-client_context = ClientContext(site_url).with_credentials(credentials)
- 
-# Use the ClientContext object to access the SharePoint site
-web = client_context.web
-client_context.load(web)
-client_context.execute_query()
- 
-# Print the title of the SharePoint site
-print("Title: {0}".format(web.properties['Title']))
+
+# SharePoint site URL
+site_url = "https://your-site-url.sharepoint.com"
+
+# User credentials
+username = "user@your-site-url.onmicrosoft.com"
+password = "your-password"
+
+# Authentication context
+ctx_auth = AuthenticationContext(site_url)
+if ctx_auth.acquire_token_for_user(username, password):
+    # Create a ClientContext object for SharePoint site
+    ctx = ClientContext(site_url, ctx_auth)
+
+    # Bypass certificate verification
+    ctx.request_session.verify = False
+
+    # Your code for making REST API calls goes here
+else:
+    print(ctx_auth.get_last_error())
