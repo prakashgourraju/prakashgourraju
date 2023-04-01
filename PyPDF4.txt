@@ -1,20 +1,16 @@
 import PyPDF4
 
-# Open the PDF file
-pdf_file = open('example.pdf', 'rb')
+# Open the input PDF file
+input_file = open('example.pdf', 'rb')
 
 # Create a PDF reader object
-pdf_reader = PyPDF4.PdfFileReader(pdf_file)
+pdf_reader = PyPDF4.PdfFileReader(input_file)
+
+# Get the root outline object (i.e. the table of contents)
+root_outline = pdf_reader.outlines
 
 # Create a PDF writer object
 pdf_writer = PyPDF4.PdfFileWriter()
-
-# Add a table of contents to the PDF
-toc = PyPDF4.generic.Outlines()
-
-# Create a bookmark for the table of contents
-toc_title = PyPDF4.generic.TextStringObject('Table of Contents')
-toc_dest = pdf_writer.addBookmark(toc_title, parent=None)
 
 # Iterate over each page in the PDF
 for page_num in range(pdf_reader.getNumPages()):
@@ -24,17 +20,13 @@ for page_num in range(pdf_reader.getNumPages()):
     # Add the page to the PDF writer object
     pdf_writer.addPage(page_obj)
 
-    # Get the page's table of contents entry (e.g. "Chapter 1")
-    toc_entry = page_obj.extractText().splitlines()[0]
-
-    # Create a bookmark for the page's table of contents entry
-    toc_title = PyPDF4.generic.TextStringObject(toc_entry)
-    toc_dest = pdf_writer.addBookmark(toc_title, parent=toc_dest, color=None, fit='/FitH', zoom=None)
+# Add the bookmarks to the PDF writer object
+pdf_writer.addBookmarkFromDestination(root_outline)
 
 # Write the output PDF file
-output_file = open('example_with_toc.pdf', 'wb')
+output_file = open('example_with_bookmarks.pdf', 'wb')
 pdf_writer.write(output_file)
 
 # Close the input and output files
-pdf_file.close()
+input_file.close()
 output_file.close()
