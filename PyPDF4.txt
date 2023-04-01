@@ -20,8 +20,19 @@ for page_num in range(pdf_reader.getNumPages()):
     # Add the page to the PDF writer object
     pdf_writer.addPage(page_obj)
 
-# Add the bookmarks to the PDF writer object
-pdf_writer.addBookmarkFromDestination(root_outline)
+# Recursively add the bookmarks to the PDF writer object
+def add_bookmarks(outline, parent):
+    for child in outline:
+        title = child.title
+        dest = child.dest
+        if dest is not None:
+            page_num = pdf_reader.getDestinationPageNumber(dest)
+            pdf_writer.addBookmark(title, page_num, parent)
+        else:
+            new_parent = pdf_writer.addBookmark(title, None, parent)
+            add_bookmarks(child, new_parent)
+            
+add_bookmarks(root_outline, None)
 
 # Write the output PDF file
 output_file = open('example_with_bookmarks.pdf', 'wb')
