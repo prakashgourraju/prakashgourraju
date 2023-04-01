@@ -1,24 +1,29 @@
-import PyPDF4
+import fitz
 
 # Open the input PDF file
-input_file = open('example.pdf', 'rb')
+input_file = "example.pdf"
+doc = fitz.open(input_file)
 
-# Create a PDF reader object
-pdf_reader = PyPDF4.PdfFileReader(input_file)
+# Get the table of contents
+toc = []
+for page in doc:
+    # Extract the headings from the page text
+    headings = page.getText("heading")
 
-# Get the root outline object (i.e. the table of contents)
-root_outline = pdf_reader.outlines
+    # If there are no headings on the page, skip it
+    if not headings:
+        continue
 
-# Define a function to recursively print the outlines
-def print_outlines(outline, level=0):
-    for child in outline:
-        title = child.title
-        if title is not None:
-            print(f"{' ' * (level * 4)}{title}")
-            print_outlines(child, level=level+1)
+    # Get the page number and add it to the table of contents
+    page_number = page.number + 1
+    toc.append((headings[0], page_number))
 
-# Print the table of contents
-print_outlines(root_outline)
+# Create the bookmarks
+doc.setTableOfContents(toc)
 
-# Close the input file
-input_file.close()
+# Save the output PDF file
+output_file = "output.pdf"
+doc.save(output_file)
+
+# Close the input and output files
+doc.close()
