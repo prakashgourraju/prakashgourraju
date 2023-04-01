@@ -1,53 +1,40 @@
-from PyPDF4 import PdfFileReader, PdfFileWriter
-import re
+import PyPDF4
 
-def create_bookmarks(pdf_file):
-    # Open the PDF file and create a PDF reader object
-    pdf = PdfFileReader(open(pdf_file, 'rb'))
-    # Create a PDF writer object
-    writer = PdfFileWriter()
+# Open the PDF file
+pdf_file = open('example.pdf', 'rb')
 
-    # Create a regex pattern to match headings in the TOC
-    pattern = re.compile(r'^\d+\.\d+\s+(.*)$')
+# Create a PDF reader object
+pdf_reader = PyPDF4.PdfFileReader(pdf_file)
 
-    # Get the page number of the first page of the TOC
-    toc_page_num = None
-    for i in range(pdf.getNumPages()):
-        page = pdf.getPage(i)
-        text = page.extractText()
-        if 'Table of Contents' in text:
-            toc_page_num = i + 1
-            break
+# Create a PDF writer object
+pdf_writer = PyPDF4.PdfFileWriter()
 
-    # Extract the TOC text from the PDF
-    toc_text = ''
-    for i in range(toc_page_num, pdf.getNumPages()):
-        page = pdf.getPage(i)
-        text = page.extractText()
-        toc_text += text
+# Add a table of contents to the PDF
+toc = PyPDF4.generic.Outlines()
 
-    # Create a list of tuples containing the page number and title for each heading in the TOC
-    bookmarks = []
-    for line in toc_text.split('\n'):
-        match = pattern.match(line.strip())
-        if match:
-            title = match.group(1)
-            page_num = pdf.getNumPages() - (len(toc_text.split('\n')) - toc_text.split('\n').index(line)) + 1
-            bookmarks.append((page_num, title))
+# Create a bookmark for the table of contents
+toc_title = PyPDF4.generic.TextStringObject('Table of Contents')
+toc_dest = pdf_writer.addBookmark(toc_title, parent=None)
 
-    # Create the bookmarks in the PDF
-    for page_num, title in bookmarks:
-        dest = writer.addBookmark(title, page_num - 1)
-        dest['/Page']['/StructParents'] = 0
+# Iterate over each page in the PDF
+for page_num in range(pdf_reader.getNumPages()):
+    # Get the page object
+    page_obj = pdf_reader.getPage(page_num)
 
-    # Merge the original PDF with the new bookmarks
-    for i in range(pdf.getNumPages()):
-        page = pdf.getPage(i)
-        writer.addPage(page)
+    # Add the page to the PDF writer object
+    pdf_writer.addPage(page_obj)
 
-    # Write the merged PDF with bookmarks to a new file
-    with open('bookmarked.pdf', 'wb') as outfile:
-        writer.write(outfile)
+    # Get the page's table of contents entry (e.g. "Chapter 1")
+    toc_entry = page_obj.extractText().splitlines()[0]
 
-# Call the create_bookmarks() function with the name of your PDF file as an argument
-create_bookmarks('example.pdf')
+    # Create a bookmark for the page's table of contents entry
+    toc_title = PyPDF4.generic.TextStringObject(toc_entry)
+    toc_dest = pdf_writer.addBookmark(toc_title, parent=toc_dest, color=None, fit='/FitH', zoom=None)
+
+# Write the output PDF file
+output_file = open('example_with_toc.pdf', 'wb')
+pdf_writer.write(output_file)
+
+# Close the input and output files
+pdf_file.close()
+output_file.close()
